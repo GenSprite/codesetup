@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory - Canteen POS</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .content-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .low-stock {
+      background-color: #fff3cd;
+    }
+    .expiring-soon {
+      background-color: #f8d7da;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-dark">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">📦 Inventory Management</span>
+      <div class="d-flex align-items-center text-white">
+        <span class="me-3" id="userInfo"></span>
+        <a href="dashboard.html" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid mt-4">
+    <div class="content-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Product Inventory</h4>
+        <button class="btn btn-primary" onclick="showAddModal()" id="addBtn">
+          + Add Product
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Reorder Level</th>
+              <th>Expiry Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTable">
+            <tr>
+              <td colspan="7" class="text-center">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Product Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Add Product</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="productForm">
+            <input type="hidden" id="productId" />
+            <div class="mb-3">
+              <label class="form-label">Product Name</label>
+              <input type="text" class="form-control" id="productName" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="productCategory" required>
+                <option value="Main Course">Main Course</option>
+                <option value="Side Dish">Side Dish</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Desserts">Desserts</option>
+              </select>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Price</label>
+                <input type="number" class="form-control" id="productPrice" step="0.01" required />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Cost</label>
+                <input type="number" class="form-control" id="productCost" step="0.01" required />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Stock Quantity</label>
+                <input type="number" class="form-control" id="productStock" required />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Reorder Level</label>
+                <input type="number" class="form-control" id="productReorder" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Expiry Date</label>
+              <input type="date" class="form-control" id="productExpiry" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_URL = "http://localhost:3000/api/products";
+    const inventoryTable = document.getElementById("inventoryTable");
+    const modal = new bootstrap.Modal(document.getElementById("productModal"));
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    function logout() {
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    }
+
+    function applyRolePermissions() {
+      document.getElementById("userInfo").innerText = `${user.full_name} (${user.role})`;
+      const addBtn = document.getElementById("addBtn");
+      if (user.role === "cashier") addBtn.style.display = "none";
+    }
+
+    function renderActionButtons(p) {
+      if (user.role === "owner") {
+        return `
+          <button class="btn btn-sm btn-warning" onclick="editProduct(${p.id})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+        `;
+      } else if (user.role === "manager") {
+        return `<button class="btn btn-sm btn-warning" onclick="editProduct(${p.id})">Edit</button>`;
+      } else {
+        return `<span class="text-muted">View Only</span>`;
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (!data.success) throw new Error("Error loading products");
+        displayProducts(data.products);
+      } catch (err) {
+        console.error(err);
+        inventoryTable.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading products</td></tr>`;
+      }
+    }
+
+    function displayProducts(products) {
+      if (products.length === 0) {
+        inventoryTable.innerHTML = `<tr><td colspan="7" class="text-center">No products available.</td></tr>`;
+        return;
+      }
+
+      inventoryTable.innerHTML = "";
+      const today = new Date();
+
+      products.forEach((p) => {
+        const expiryDate = p.expiry_date ? new Date(p.expiry_date) : null;
+        const row = document.createElement("tr");
+
+        if (p.stock_quantity <= p.reorder_level) row.classList.add("low-stock");
+        if (expiryDate && expiryDate - today <= 7 * 24 * 60 * 60 * 1000)
+          row.classList.add("expiring-soon");
+
+        row.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.category}</td>
+          <td>₱${parseFloat(p.price).toFixed(2)}</td>
+          <td>${p.stock_quantity}</td>
+          <td>${p.reorder_level}</td>
+          <td>${p.expiry_date ? new Date(p.expiry_date).toLocaleDateString() : "—"}</td>
+          <td>${renderActionButtons(p)}</td>
+        `;
+        inventoryTable.appendChild(row);
+      });
+    }
+
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (user.role === "cashier") {
+        alert("You are not authorized to perform this action.");
+        return;
+      }
+
+      const id = document.getElementById("productId").value;
+      const productData = {
+        name: document.getElementById("productName").value,
+        category: document.getElementById("productCategory").value,
+        price: parseFloat(document.getElementById("productPrice").value),
+        cost: parseFloat(document.getElementById("productCost").value),
+        stock_quantity: parseInt(document.getElementById("productStock").value),
+        reorder_level: parseInt(document.getElementById("productReorder").value),
+        expiry_date: document.getElementById("productExpiry").value || null,
+      };
+
+      const method = id ? "PUT" : "POST";
+      const url = id ? `${API_URL}/${id}` : API_URL;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        modal.hide();
+        loadProducts();
+      } else {
+        alert("Error saving product");
+      }
+    });
+
+    async function editProduct(id) {
+      if (user.role === "cashier") {
+        alert("You are not authorized to edit products.");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/${id}`);
+      const data = await res.json();
+      if (!data.success) return alert("Product not found");
+
+      const p = data.product;
+      document.getElementById("productId").value = p.id;
+      document.getElementById("productName").value = p.name;
+      document.getElementById("productCategory").value = p.category;
+      document.getElementById("productPrice").value = p.price;
+      document.getElementById("productCost").value = p.cost;
+      document.getElementById("productStock").value = p.stock_quantity;
+      document.getElementById("productReorder").value = p.reorder_level;
+      document.getElementById("productExpiry").value = p.expiry_date
+        ? p.expiry_date.split("T")[0]
+        : "";
+      document.getElementById("modalTitle").innerText = "Edit Product";
+      modal.show();
+    }
+
+    async function deleteProduct(id) {
+      if (user.role !== "owner") {
+        alert("Only the Owner can delete products.");
+        return;
+      }
+
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) loadProducts();
+      else alert("Error deleting product");
+    }
+
+    function showAddModal() {
+      if (user.role === "cashier") {
+        alert("You are not authorized to add products.");
+        return;
+      }
+      document.getElementById("productForm").reset();
+      document.getElementById("modalTitle").innerText = "Add Product";
+      document.getElementById("productId").value = "";
+      modal.show();
+    }
+
+    applyRolePermissions();
+    loadProducts();
+  </script>
+</body>
+</html>

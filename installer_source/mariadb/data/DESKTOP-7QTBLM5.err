@@ -1,0 +1,23 @@
+2025-10-06 22:00:31 0 [Note] Starting MariaDB 12.0.2-MariaDB source revision aab83aecdca15738d114cf5a2f223f1d12e4e6bd server_uid rd96ypii+0nwak01xKtXJwJ121s= as process 9252
+2025-10-06 22:00:31 0 [Note] InnoDB: Compressed tables use zlib 1.3.1
+2025-10-06 22:00:31 0 [Note] InnoDB: Number of transaction pools: 1
+2025-10-06 22:00:31 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+2025-10-06 22:00:31 0 [Note] InnoDB: Using ThreadPool
+2025-10-06 22:00:31 0 [Note] InnoDB: innodb_buffer_pool_size_max=1968m, innodb_buffer_pool_size=1967m
+2025-10-06 22:00:31 0 [Note] InnoDB: Completed initialization of buffer pool
+2025-10-06 22:00:31 0 [Note] InnoDB: File system buffers for log disabled (block size=512 bytes)
+2025-10-06 22:00:31 0 [Note] InnoDB: End of log at LSN=46300
+2025-10-06 22:00:31 0 [Note] InnoDB: Opened 3 undo tablespaces
+2025-10-06 22:00:31 0 [Note] InnoDB: 128 rollback segments in 3 undo tablespaces are active.
+2025-10-06 22:00:31 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+2025-10-06 22:00:31 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+2025-10-06 22:00:31 0 [Note] InnoDB: log sequence number 46300; transaction id 14
+2025-10-06 22:00:31 0 [Note] Plugin 'FEEDBACK' is disabled.
+2025-10-06 22:00:31 0 [Note] InnoDB: Loading buffer pool(s) from C:\Program Files\MariaDB 12.0\data\ib_buffer_pool
+2025-10-06 22:00:31 0 [Note] mysqld.exe: SSPI: using principal name 'localhost', mech 'Negotiate'
+2025-10-06 22:00:31 0 [Note] InnoDB: Buffer pool(s) load completed at 251006 22:00:31
+2025-10-06 22:00:32 0 [Note] Server socket created on IP: '::', port: '3306'.
+2025-10-06 22:00:32 0 [Note] Server socket created on IP: '0.0.0.0', port: '3306'.
+2025-10-06 22:00:32 0 [Note] mysqld.exe: Event Scheduler: Loaded 0 events
+2025-10-06 22:00:32 0 [Note] C:\Program Files\MariaDB 12.0\bin\mysqld.exe: ready for connections.
+Version: '12.0.2-MariaDB'  socket: ''  port: 3306  mariadb.org binary distribution
